@@ -18,9 +18,9 @@
         <storm.kafka.version>1.0.1.2.5.3.0-37</storm.kafka.version>
         <storm.hdfs.version>1.0.1.2.5.3.0-37</storm.hdfs.version>
         <hadoop.version>2.7.3.2.5.3.0-37</hadoop.version>
-
+        <log4j.version>1.2.17</log4j.version>
+        <scala.version>2.10.4</scala.version>
     </properties>
-
     <repositories>
         <repository>
             <id>mavencentral</id>
@@ -28,7 +28,6 @@
             <url>https://repo1.maven.org/maven2/</url>
             <layout>default</layout>
         </repository>
-
         <repository>
             <releases>
                 <enabled>true</enabled>
@@ -61,7 +60,6 @@
             <url>http://repo.hortonworks.com/content/repositories/jetty-hadoop/</url>
             <layout>default</layout>
         </repository>
-
         <repository>
             <id>storm</id>
             <url>http://clojars.org/repo/storm/</url>
@@ -83,8 +81,6 @@
             <url>http://twitter4j.org/maven2</url>
         </repository>
     </repositories>
-
-
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -93,9 +89,8 @@
             <!-- in a real topology that will be deploy to a real cluster, scope should be set to provided
                  as shown below. we're keeping it in default 'compile' scope to allow for easy execution with
                  maven in local cluster mode -->
-             <scope>provided</scope>
+            <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.10</artifactId>
@@ -111,7 +106,26 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <version>2.10.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-kafka</artifactId>
@@ -129,29 +143,17 @@
                     <artifactId>kafka-clients</artifactId>
                     <groupId>org.apache.kafka</groupId>
                 </exclusion>
-                <!--<exclusion>-->
-                    <!--<artifactId>curator-framework</artifactId>-->
-                    <!--<groupId>org.apache.curator</groupId>-->
-                <!--</exclusion>-->
+                <exclusion>
+                    <artifactId>curator-framework</artifactId>
+                    <groupId>org.apache.curator</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
-
-        <!--<dependency>-->
-            <!--<groupId>org.apache.curator</groupId>-->
-            <!--<artifactId>curator-framework</artifactId>-->
-            <!--<version>2.10.0</version>-->
-            <!--<exclusions>-->
-                <!--<exclusion>-->
-                    <!--<groupId>log4j</groupId>-->
-                    <!--<artifactId>log4j</artifactId>-->
-                <!--</exclusion>-->
-                <!--<exclusion>-->
-                    <!--<groupId>org.jboss.netty</groupId>-->
-                    <!--<artifactId>netty</artifactId>-->
-                <!--</exclusion>-->
-            <!--</exclusions>-->
-        <!--</dependency>-->
-
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
+        </dependency>
         <!-- Storm HDFS Dependencies -->
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -277,8 +279,17 @@
             <artifactId>xalan</artifactId>
             <version>2.7.1</version>
         </dependency>
-
-
+        <!-- Other Dependency -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.6.1</version>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -317,7 +328,6 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -333,8 +343,10 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass></mainClass>
                                 </transformer>
                             </transformers>
@@ -342,11 +354,8 @@
                     </execution>
                 </executions>
             </plugin>
-
-
         </plugins>
         <resources>
-
             <resource>
                 <directory>${basedir}/resources</directory>
                 <filtering>false</filtering>
@@ -354,10 +363,6 @@
                     <include>log4j2.xml</include>
                 </includes>
             </resource>
-
-
-
         </resources>
     </build>
-
 </project>

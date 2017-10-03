@@ -50,7 +50,7 @@ public class StormKafkaTopology {
         //String hdfsOutputDir = args[2];
 
         String hostname = "ip-10-30-10-141.us-west-2.compute.internal";
-        String kafkaTopic = "mantis-event-queue";
+        String kafkaTopic = "mantis-event-queue1";
         String hdfsOutputDir = "hslee_storm_test";
 
         // Create an instance of HDFSBolt and initialize it
@@ -77,12 +77,14 @@ public class StormKafkaTopology {
                 .withSyncPolicy(syncPolicy);
 
         // Create an instance of KafkaSpout and initialize it
-        // ip-10-30-10-141.us-west-2.compute.internal:2181,ip-10-30-10-167.us-west-2.compute.internal:2181,ip-10-30-10-192.us-west-2.compute.internal:2181
         //BrokerHosts hosts = new ZkHosts(hostname + ":2181");
         BrokerHosts hosts = new ZkHosts("ip-10-30-10-141.us-west-2.compute.internal:2181,ip-10-30-10-167.us-west-2.compute.internal:2181,ip-10-30-10-192.us-west-2.compute.internal:2181");
 
+        // group-name: kafka-storm
         SpoutConfig spoutConfig = new SpoutConfig(hosts, kafkaTopic, "/" + kafkaTopic,
-                UUID.randomUUID().toString());
+                "storm-kafka-group");
+                //UUID.randomUUID().toString());
+
         spoutConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
         KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
 
