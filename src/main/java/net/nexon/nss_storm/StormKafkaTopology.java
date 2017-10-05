@@ -23,6 +23,7 @@ import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import net.nexon.nss_storm.bolt.format.YmdPartitionedFileNameFormat;
 
 ///**
 // * Created by hslee on 9/8/2017.
@@ -54,9 +55,10 @@ public class StormKafkaTopology {
         String hdfsOutputDir = "hslee_storm_test";
 
         // Create an instance of HDFSBolt and initialize it
+        // https://github.com/ptgoetz/storm-hdfs
 
         // Sync with FileSystem after every 100 tuples.
-        SyncPolicy syncPolicy = new CountSyncPolicy(10);
+        SyncPolicy syncPolicy = new CountSyncPolicy(1000);
 
         // Rotate files after each 127MB
         FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(127.0f, Units.MB);
@@ -65,10 +67,15 @@ public class StormKafkaTopology {
         RecordFormat format = new DelimitedRecordFormat().withFieldDelimiter(",");
 
         // Files in HDFS will be stored at path ‘hdfsOutputDir’ having
-        // ‘test-*.csv' format
-        FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPrefix("test-")
-                .withExtension(".csv").withPath(hdfsOutputDir);
+        YmdPartitionedFileNameFormat fileNameFormat = new YmdPartitionedFileNameFormat()
+                // DateBaseFileNameFormat
+                .withPrefix("test3-")
+                .withExtension(".csv")
+                .withPath(hdfsOutputDir);
 
+        //
+        // https://github.com/ptgoetz/storm-hdfs/issues/3
+        //
         HdfsBolt hdfsbolt = new HdfsBolt()
                 .withFsUrl("hdfs://" + hostname + ":8020")
                 .withFileNameFormat(fileNameFormat)
@@ -83,7 +90,6 @@ public class StormKafkaTopology {
         // group-name: kafka-storm
         SpoutConfig spoutConfig = new SpoutConfig(hosts, kafkaTopic, "/" + kafkaTopic,
                 "storm-kafka-group");
-                //UUID.randomUUID().toString());
 
         spoutConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
         KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
@@ -107,7 +113,7 @@ public class StormKafkaTopology {
      * Utils.sleep(10000); cluster.killTopology("test"); cluster.shutdown();
     */
         conf.setNumWorkers(1);
-        StormSubmitter.submitTopology("test-topology", conf,
+        StormSubmitter.submitTopology("test-topology-3-2", conf,
                 builder.createTopology());
     }
 }
