@@ -49,6 +49,7 @@ public class YmdPartitionedFileNameFormat implements FileNameFormat {
 
     public String getPath() {
         return this.path
+                + "/launcher3"
                 + GetDateString("/yyyy")
                 + GetDateString("/MM")
                 + GetDateString("/dd");

@@ -1,6 +1,9 @@
 package net.nexon.nss_storm;
 
 import java.util.UUID;
+
+import net.nexon.nss_storm.bolt.format.HdfsBoltExt;
+import net.nexon.nss_storm.bolt.format.JsonEpochTimeRecordFormat;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
@@ -24,12 +27,6 @@ import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 import net.nexon.nss_storm.bolt.format.YmdPartitionedFileNameFormat;
-
-///**
-// * Created by hslee on 9/8/2017.
-// */
-//public class StormKafkaTopology {
-//}
 
 public class StormKafkaTopology {
 
@@ -63,57 +60,44 @@ public class StormKafkaTopology {
         // Rotate files after each 127MB
         FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(127.0f, Units.MB);
 
-        // Input file is a CSV file
-        RecordFormat format = new DelimitedRecordFormat().withFieldDelimiter(",");
+        // Input file is a json file
+        RecordFormat format = new JsonEpochTimeRecordFormat().withEpochTimeField("received_time");
+        //RecordFormat format = new DelimitedRecordFormat().withFieldDelimiter(",");
 
         // Files in HDFS will be stored at path ‘hdfsOutputDir’ having
         YmdPartitionedFileNameFormat fileNameFormat = new YmdPartitionedFileNameFormat()
-                // DateBaseFileNameFormat
-                .withPrefix("test3-")
+                .withPrefix("test-11-")
                 .withExtension(".csv")
                 .withPath(hdfsOutputDir);
 
-        //
-        // https://github.com/ptgoetz/storm-hdfs/issues/3
-        //
-        HdfsBolt hdfsbolt = new HdfsBolt()
+        HdfsBoltExt hdfsbolt = new HdfsBoltExt()
                 .withFsUrl("hdfs://" + hostname + ":8020")
                 .withFileNameFormat(fileNameFormat)
                 .withRecordFormat(format)
                 .withRotationPolicy(rotationPolicy)
                 .withSyncPolicy(syncPolicy);
 
-        // Create an instance of KafkaSpout and initialize it
-        //BrokerHosts hosts = new ZkHosts(hostname + ":2181");
         BrokerHosts hosts = new ZkHosts("ip-10-30-10-141.us-west-2.compute.internal:2181,ip-10-30-10-167.us-west-2.compute.internal:2181,ip-10-30-10-192.us-west-2.compute.internal:2181");
-
-        // group-name: kafka-storm
         SpoutConfig spoutConfig = new SpoutConfig(hosts, kafkaTopic, "/" + kafkaTopic,
                 "storm-kafka-group");
 
         spoutConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
         KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
 
-        // Create an instance of TopologyBuilder
         TopologyBuilder builder = new TopologyBuilder();
 
-        // Set spout and bolt for this topology. Send output of kafka-spout as
-        // input to hdfs-bolt.
         builder.setSpout("kafka-spout", kafkaSpout, 1).setNumTasks(1);
+        builder.setBolt("hdfs-bolt", hdfsbolt,2).setNumTasks(2).shuffleGrouping("kafka-spout");
 
-        builder.setBolt("hdfs-bolt", hdfsbolt,1).setNumTasks(1)
-                .shuffleGrouping("kafka-spout");
-
-        // Submit the topology to Storm cluster in distributed mode with name
-        // "test-topology"
         Config conf = new Config();
+
     /*
      * LocalCluster cluster = new LocalCluster();
      * cluster.submitTopology("test", conf, builder.createTopology());
      * Utils.sleep(10000); cluster.killTopology("test"); cluster.shutdown();
     */
         conf.setNumWorkers(1);
-        StormSubmitter.submitTopology("test-topology-3-2", conf,
+        StormSubmitter.submitTopology("test-topology-3-11", conf,
                 builder.createTopology());
     }
 }
