@@ -6,6 +6,7 @@ import org.apache.storm.task.TopologyContext;
 import java.util.Map;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import java.util.UUID;
 
 
 public class YmdPartitionedFileNameFormat implements FileNameFormat {
@@ -39,7 +40,8 @@ public class YmdPartitionedFileNameFormat implements FileNameFormat {
     }
 
     public String getName(long rotation, long timeStamp) {
-        return this.prefix + this.componentId + "-" + this.taskId + "-" + rotation + "-" + timeStamp + this.extension;
+        String id = UUID.randomUUID().toString().substring(0, 4);
+        return this.prefix + this.componentId + "-" + this.taskId + "-" + rotation + "-" + timeStamp + "-" + id + this.extension;
     }
 
     private String GetDateString(String format) {
@@ -48,10 +50,13 @@ public class YmdPartitionedFileNameFormat implements FileNameFormat {
     }
 
     public String getPath() {
+        return this.path + "/launcher2";
+        /*
         return this.path
                 + "/launcher3"
                 + GetDateString("/yyyy")
                 + GetDateString("/MM")
                 + GetDateString("/dd");
+        */
     }
 }

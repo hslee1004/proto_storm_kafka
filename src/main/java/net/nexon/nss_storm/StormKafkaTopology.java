@@ -3,6 +3,7 @@ package net.nexon.nss_storm;
 import java.util.UUID;
 
 import net.nexon.nss_storm.bolt.format.HdfsBoltExt;
+import net.nexon.nss_storm.bolt.format.HdfsBoltExt2;
 import net.nexon.nss_storm.bolt.format.JsonEpochTimeRecordFormat;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
@@ -27,6 +28,7 @@ import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 import net.nexon.nss_storm.bolt.format.YmdPartitionedFileNameFormat;
+import org.apache.storm.tuple.Fields;
 
 public class StormKafkaTopology {
 
@@ -51,26 +53,16 @@ public class StormKafkaTopology {
         String kafkaTopic = "mantis-event-queue1";
         String hdfsOutputDir = "hslee_storm_test";
 
-        // Create an instance of HDFSBolt and initialize it
-        // https://github.com/ptgoetz/storm-hdfs
-
-        // Sync with FileSystem after every 100 tuples.
         SyncPolicy syncPolicy = new CountSyncPolicy(1000);
-
-        // Rotate files after each 127MB
-        FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(127.0f, Units.MB);
-
-        // Input file is a json file
+        FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(2.0f, Units.GB);
         RecordFormat format = new JsonEpochTimeRecordFormat().withEpochTimeField("received_time");
-        //RecordFormat format = new DelimitedRecordFormat().withFieldDelimiter(",");
 
-        // Files in HDFS will be stored at path ‘hdfsOutputDir’ having
         YmdPartitionedFileNameFormat fileNameFormat = new YmdPartitionedFileNameFormat()
-                .withPrefix("test-11-")
+                .withPrefix("test-20-")
                 .withExtension(".csv")
                 .withPath(hdfsOutputDir);
 
-        HdfsBoltExt hdfsbolt = new HdfsBoltExt()
+        HdfsBoltExt2 hdfsbolt = new HdfsBoltExt2()
                 .withFsUrl("hdfs://" + hostname + ":8020")
                 .withFileNameFormat(fileNameFormat)
                 .withRecordFormat(format)
@@ -87,7 +79,9 @@ public class StormKafkaTopology {
         TopologyBuilder builder = new TopologyBuilder();
 
         builder.setSpout("kafka-spout", kafkaSpout, 1).setNumTasks(1);
-        builder.setBolt("hdfs-bolt", hdfsbolt,2).setNumTasks(2).shuffleGrouping("kafka-spout");
+        builder.setBolt("hdfs-bolt", hdfsbolt,2)
+                .setNumTasks(2)
+                .shuffleGrouping("kafka-spout");
 
         Config conf = new Config();
 
@@ -97,7 +91,7 @@ public class StormKafkaTopology {
      * Utils.sleep(10000); cluster.killTopology("test"); cluster.shutdown();
     */
         conf.setNumWorkers(1);
-        StormSubmitter.submitTopology("test-topology-3-11", conf,
+        StormSubmitter.submitTopology("test-topology-3-20", conf,
                 builder.createTopology());
     }
 }
